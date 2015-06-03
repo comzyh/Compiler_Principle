@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-01 19:05:49
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-03 18:14:11
+# @Last Modified time: 2015-06-03 18:38:57
 import re
 import json
 from fa import Epsilon, NFA
@@ -91,8 +91,7 @@ def tokenizer_over_nfa(string, position, nfa):
     for state in state_set:
         if state in nfa.final_state:
             final_states.add(state.data['token'])
-    print 'token:', string[position:endpos + 1]
-    return endpos + 1, final_states
+    return endpos + 1, final_states, string[position:endpos + 1]
 
 
 def main():
@@ -102,14 +101,28 @@ def main():
     for key, value in nfa.name_to_state_dict.items():
         print 'index: %d, %s' % (value.index, key)
     # print nfa
+    token_table = []
     for line in open('input.txt'):
+        token_table_line = []
         pos = 0
         while pos < len(line):
             while pos < len(line) and line[pos] in [' ', '\t', '\n']:
                 pos += 1
             if pos < len(line):
-                pos, state_set = tokenizer_over_nfa(line, pos, nfa)
-                print state_set
+                pos, state_set, token = tokenizer_over_nfa(line, pos, nfa)
+                token_type = None
+                for _type in final:
+                    if _type in state_set:
+                        token_type = _type
+                        break
+                token_table_line.append((token_type, token))
+        for token_type, token in token_table_line:
+            print token,
+        print '\n'
+        token_table += token_table_line
         # break
+    output_file = open('token_table.txt', 'w+')
+    for token_type, token in token_table:
+        output_file.write('%s\t%s\n' % (token_type, token))
 if __name__ == '__main__':
     main()
