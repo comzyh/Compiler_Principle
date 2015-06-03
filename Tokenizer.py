@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-01 19:05:49
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-03 16:37:25
+# @Last Modified time: 2015-06-03 18:14:11
 import re
 import json
 from fa import Epsilon, NFA
@@ -19,7 +19,7 @@ def read_lexical():
         if line[0] == '#':
             continue
         if line_number == 0:
-            final = line.split(' ')
+            final = line[:-1].split(' ')
         else:
             groups = reg.search(line)
             if groups is None:
@@ -48,11 +48,10 @@ def create_nfa(final_states_name, productions):
         return name_to_state_dict[name]
 
     for final_state_name in final_states_name:
-        node = nfa.create_node()
+        node = get_state_by_name(final_state_name)
         node.data = {'token': final_state_name}
         nfa.final_state.add(node)
-        name_to_state_dict[final_state_name] = node
-        print 'index: %3d, name: %s' % (node.index, final_state_name)
+        # print 'index: %3d, name: %s' % (node.index, final_state_name)
     for p in productions:
         left_state = get_state_by_name(p['left'])
         if p['epsilon']:
@@ -71,12 +70,46 @@ def create_nfa(final_states_name, productions):
     return nfa
 
 
+def tokenizer_over_nfa(string, position, nfa):
+    state_set = set()
+    state_set.add(nfa.S)
+    endpos = position
+    for i in range(position, len(string)):
+        char = string[i]
+        # print 'char: %s' % char
+        new_state_set = set()
+        for state in state_set:
+            # state.show_transfer(char)
+            if char in state.transfer:
+                new_state_set = new_state_set.union(set(state.transfer[char]))
+        if not new_state_set:
+            break
+        endpos = i
+        state_set = new_state_set
+
+    final_states = set()
+    for state in state_set:
+        if state in nfa.final_state:
+            final_states.add(state.data['token'])
+    print 'token:', string[position:endpos + 1]
+    return endpos + 1, final_states
+
+
 def main():
     print 'Tokenizer by comzyh'
     final, productions = read_lexical()
     nfa = create_nfa(final, productions)
-    # print json.dumps(nfa.states)
-    # nfa.S.show()
-    # nfa.states[141].show()
+    for key, value in nfa.name_to_state_dict.items():
+        print 'index: %d, %s' % (value.index, key)
+    # print nfa
+    for line in open('input.txt'):
+        pos = 0
+        while pos < len(line):
+            while pos < len(line) and line[pos] in [' ', '\t', '\n']:
+                pos += 1
+            if pos < len(line):
+                pos, state_set = tokenizer_over_nfa(line, pos, nfa)
+                print state_set
+        # break
 if __name__ == '__main__':
     main()

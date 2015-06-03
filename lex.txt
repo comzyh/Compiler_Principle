@@ -271,6 +271,8 @@ id = id "9"
 #limiter
 limiter = "["
 limiter = "]"
+limiter = "{"
+limiter = "}"
 limiter = "("
 limiter = ")"
 limiter = ";"
@@ -282,5 +284,4 @@ operator = "-"
 operator = "*"
 operator = "/"
 operator = "%"
-
-
+operator = "<<"

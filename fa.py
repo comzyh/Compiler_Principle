@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-02 17:38:36
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-03 16:37:11
+# @Last Modified time: 2015-06-03 18:04:56
 
 Epsilon = 0
 
@@ -12,29 +12,40 @@ class NFANode(object):
 
     """Node of NFA"""
 
-    def __init__(self, nfa=None, index=0, trasfer={}, data=None):
+    def __init__(self, nfa=None, index=0, transfer=None, data=None):
         super(NFANode, self).__init__()
         if not isinstance(index, int):
             raise Exception('id must be integer, got %s' % index)
+        if transfer is None:
+            transfer = {}  # 坑, 使用默认参数的话全局都指向一个dictionary了..
         self.index = index  # 标号
-        self.trasfer = trasfer  # 转移表
+        self.transfer = transfer  # 转移表
         self.NFA = nfa
         self.alphabet = nfa.alphabet
         self.data = data
         self.name_to_state_dict = None
 
-    def add_trasfer(self, char, dest):
-        if char not in self.trasfer:
-            self.trasfer[char] = []
-        self.trasfer[char].append(dest)
+    def add_transfer(self, char, dest):
+        if char not in self.transfer:
+            self.transfer[char] = []
+        self.transfer[char].append(dest)
 
-    def show(self):
+    def __str__(self):
+        s = ''
+        s += '--------------\n'
+        s += 'index:%s\n' % self.index
+        for key, arr in self.transfer.items():
+            s += '%s :' % key
+            s += str([state.index for state in arr])
+            s += '\n'
+        return s
+
+    def show_transfer(self, char):
         print '--------------'
         print 'index:%s' % self.index
-        for key, arr in self.trasfer.items():
-            print key, ':',
-            print[state.index for state in arr]
-        print '\n'
+        if char in self.transfer:
+            print char, ':',
+            print[state.index for state in self.transfer[char]]
 
 
 class NFA(object):
@@ -62,7 +73,14 @@ class NFA(object):
             print 'chr in self.alphabet %s\n' % (char in self.alphabet)
             print 'char = ', char
             raise Exception('illigal transition')
-        u.add_trasfer(char, v)
+        u.add_transfer(char, v)
+        # print '%s ----%s----> %s' % (u.index, char, v.index)
+
+    def __str__(self):
+        s = ''
+        for state in self.states:
+            s += state.__str__()
+        return s
 
 
 class DFA(object):
