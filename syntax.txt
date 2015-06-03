@@ -1,0 +1,34 @@
+S
+S = S function
+S = $
+function = type id ( args ) { block }
+args = $
+args = arg args_tail
+args_tail = , arg args_tail
+args_tail = $
+arg = type id
+type = int
+type = double
+type = void
+block = $
+block = stmt block
+stmt = $
+stmt = { stmt }
+stmt = declare ;
+declare = type id ids;
+ids = $
+ids = , id ids
+stmt = exp ;
+exp = id = exp
+exp = id
+exp = number
+exp = string
+exp = exp + exp
+exp = ( exp )
+stmt = return return_value;
+return_value = $
+return_value = exp;
+for_exp = for ( exp ; exp ; exp ) compound_stmt
+while_exp = while ( exp ) compound_stmt
+compound_stmt = { block }
+compound_stmt = stmt
