@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-01 19:05:49
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-03 21:00:29
+# @Last Modified time: 2015-06-03 22:58:56
 import re
 import json
 from fa import Epsilon, NFA
@@ -11,27 +11,37 @@ from fa import Epsilon, NFA
 
 def read_lexical():
     line_number = 0
-    final = []
+    legal_number = 0
+    final = {}
     productions = []
-    reg = re.compile(r'(?P<left>\w+)\s*=\s*((?P<epsilon>\$)|'
-                     '((?P<right>\w+))?\s*\"(?P<terminate>.*)\")')
+    reg = re.compile(r'(?P<left>\S+)\s*=\s*((?P<epsilon>\$)|'
+                     '((?P<right>[^\s\"]+))?\s*\"(?P<terminate>.*)\")')
+    reg_split_token_type = re.compile(r'(?P<token>\S+):(?P<type>\w+)')
     for line in open('lex.txt'):
+        line_number += 1
         if line[0] == '#':
             continue
-        if line_number == 0:
-            final = line[:-1].split(' ')
+        if line_number == 1:
+            final_tokens = line[:-1].split(' ')
+            for t in final_tokens:
+                result = reg_split_token_type.search(t)
+                if not result:
+                    print 'm', t, 'z'
+                final[result.group('token')] = result.group('type')
         else:
-            groups = reg.search(line)
-            if groups is None:
+            result = reg.search(line)
+            if result is None:
+                print 'the line %4d print below is illegal,' % line_number
+                print line
                 continue
-            p = groups.groupdict()
+            p = result.groupdict()
             if p['epsilon'] is not None:
                 p['epsilon'] = True
             if p['terminate']:
                 p['terminate'] = json.loads('"' + p['terminate'] + '"')
             productions.append(p)
-        line_number += 1
-    print 'lexical loaded, %d lines at all' % line_number
+            legal_number += 1
+    print 'lexical loaded, %d lines at all' % legal_number
     return final, productions
 
 
@@ -53,6 +63,7 @@ def create_nfa(final_states_name, productions):
         nfa.final_state.add(node)
         # print 'index: %3d, name: %s' % (node.index, final_state_name)
     for p in productions:
+        # print p
         left_state = get_state_by_name(p['left'])
         if p['epsilon']:
             nfa.add_trans(nfa.S, Epsilon, left_state)
@@ -97,7 +108,7 @@ def tokenizer_over_nfa(string, position, nfa):
 def main():
     print 'Tokenizer by comzyh'
     final, productions = read_lexical()
-    nfa = create_nfa(final, productions)
+    nfa = create_nfa(final.keys(), productions)
     for key, value in nfa.name_to_state_dict.items():
         print 'index: %d, %s' % (value.index, key)
     # print nfa
@@ -131,6 +142,7 @@ def main():
         # break
     output_file = open('token_table.txt', 'w+')
     for token_type, token in token_table:
-        output_file.write('%s\t%s\n' % (token_type, token))
+        output_file.write('%s\t%s\t%s\n' % (final[token_type],
+                                            token_type, token))
 if __name__ == '__main__':
     main()
