@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-01 19:05:49
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-03 18:38:57
+# @Last Modified time: 2015-06-03 21:00:29
 import re
 import json
 from fa import Epsilon, NFA
@@ -102,14 +102,22 @@ def main():
         print 'index: %d, %s' % (value.index, key)
     # print nfa
     token_table = []
+    line_number = 0
+    lexical_error = False
     for line in open('input.txt'):
+        line_number += 1
         token_table_line = []
         pos = 0
-        while pos < len(line):
+        while pos < len(line) and not lexical_error:
             while pos < len(line) and line[pos] in [' ', '\t', '\n']:
                 pos += 1
             if pos < len(line):
                 pos, state_set, token = tokenizer_over_nfa(line, pos, nfa)
+                if not state_set:
+                    print 'lexical error at line %d, column %d' % \
+                        (line_number, pos)
+                    lexical_error = True
+                    break
                 token_type = None
                 for _type in final:
                     if _type in state_set:
