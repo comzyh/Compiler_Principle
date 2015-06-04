@@ -3,10 +3,13 @@
 # @Author: Comzyh
 # @Date:   2015-06-01 19:05:49
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-04 15:20:44
+# @Last Modified time: 2015-06-04 22:57:24
 import re
 import json
-from fa import Epsilon, NFA
+from fa import Epsilon, NFA, DFA
+import crash_on_ipy
+
+crash_on_ipy.init()
 
 
 def read_lexical():
@@ -66,7 +69,7 @@ def create_nfa(final_states_name, productions):
         # print p
         left_state = get_state_by_name(p['left'])
         if p['epsilon']:
-            nfa.add_trans(nfa.S, Epsilon, left_state)
+            nfa.add_transfer(nfa.S, Epsilon, left_state)
             continue
         if p['right'] is not None:
             f = get_state_by_name(p['right'])
@@ -74,9 +77,9 @@ def create_nfa(final_states_name, productions):
             f = nfa.S
         for i in p['terminate'][:-1]:
             node = nfa.create_node()
-            nfa.add_trans(f, i, node)
+            nfa.add_transfer(f, i, node)
             f = node
-        nfa.add_trans(f, p['terminate'][-1:], left_state)
+        nfa.add_transfer(f, p['terminate'][-1:], left_state)
     nfa.name_to_state_dict = name_to_state_dict
     return nfa
 
@@ -105,12 +108,77 @@ def tokenizer_over_nfa(string, position, nfa):
     return endpos + 1, final_states, string[position:endpos + 1]
 
 
+def nfa_to_dfa(nfa):
+
+    dfa = DFA(set(nfa.alphabet))
+
+    def e_colsure(state_set):
+        # 能够从NFA状态T开始只通过ε转换到达的NFA状态集合
+        if not isinstance(state_set, set):
+            raise Exception('state_set must be set')
+        queue = list(state_set)
+        result = set(state_set)
+        while queue:
+            h = queue.pop(0)
+            for state in h.get_transfer(Epsilon):
+                if state not in result:
+                    result.add(state)
+                    queue.append(state)
+        return result
+
+    def move(state_set, symbol):
+        result = set()
+        for s in state_set:
+            result = result.union(set(s.get_transfer(symbol)))
+        return result
+    state_set_to_node = {}
+    start = tuple(e_colsure(set([nfa.S])))
+    state_set_to_node[start] = dfa.S
+    queue = [start]
+    while queue:
+        h = queue.pop(0)
+        for symbol in nfa.alphabet:
+            new_set = tuple(e_colsure(move(set(h), symbol)))
+            if not new_set:
+                continue
+            if new_set not in state_set_to_node:
+                node = dfa.create_node()
+                node.data['token'] = set()
+                state_set_to_node[new_set] = node
+                for state in new_set:
+                    # if state in nfa.final_state:
+                    if state.data:
+                        node.data['token'].add(state.data['token'])
+                queue.append(new_set)
+            dfa.add_transfer(state_set_to_node[h], symbol,
+                             state_set_to_node[new_set])
+
+    return dfa
+
+
+def tokenizer_over_dfa(string, position, dfa):
+    state = dfa.S
+    endpos = position
+    for i in range(position, len(string)):
+        char = string[i]
+        new_state = state.get_transfer(char)
+        # print 'char: %s, %s' % (char, new_state.index)
+        if not new_state:
+            break
+        endpos = i
+        state = new_state
+
+    final_states = set(state.data['token'])
+    return endpos + 1, final_states, string[position:endpos + 1]
+
+
 def main():
     print 'Tokenizer by comzyh............'
     final, productions = read_lexical()
     nfa = create_nfa(final.keys(), productions)
-    for key, value in nfa.name_to_state_dict.items():
-        print 'index: %d, %s' % (value.index, key)
+    dfa = nfa_to_dfa(nfa)
+    # for key, value in nfa.name_to_state_dict.items():
+    #     print 'index: %d, %s' % (value.index, key)
     # print nfa
     token_table = []
     line_number = 0
@@ -123,7 +191,8 @@ def main():
             while pos < len(line) and line[pos] in [' ', '\t', '\n']:
                 pos += 1
             if pos < len(line):
-                pos, state_set, token = tokenizer_over_nfa(line, pos, nfa)
+                # pos, state_set, token = tokenizer_over_nfa(line, pos, nfa)
+                pos, state_set, token = tokenizer_over_dfa(line, pos, dfa)
                 if not state_set:
                     print 'lexical error at line %d, column %d' % \
                         (line_number, pos)

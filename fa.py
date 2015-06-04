@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-02 17:38:36
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-04 12:57:37
+# @Last Modified time: 2015-06-04 22:55:19
 
 Epsilon = 0
 
@@ -28,6 +28,12 @@ class NFANode(object):
         if char not in self.transfer:
             self.transfer[char] = []
         self.transfer[char].append(dest)
+
+    def get_transfer(self, char):
+        if char in self.transfer:
+            return self.transfer[char]
+        else:
+            return []
 
     def __str__(self):
         s = ''
@@ -64,7 +70,7 @@ class NFA(object):
         self.states.append(node)
         return node
 
-    def add_trans(self, u, char, v):
+    def add_transfer(self, u, char, v):
         if (not (u in self.states) or not (v in self.states) or
                 not (char in self.alphabet or char == Epsilon)):
             print 'u in self.states: %s\n' % (u in self.states)
@@ -121,7 +127,7 @@ class DFA(object):
         self.states.append(node)
         return node
 
-    def add_trans(self, u, char, v):
+    def add_transfer(self, u, char, v):
         if (not (u in self.states) or not (v in self.states) or
                 not (char in self.alphabet or char == Epsilon)):
             print 'u in self.states: %s\n' % (u in self.states)
@@ -130,6 +136,7 @@ class DFA(object):
             print 'char = ', char
             raise Exception('illigal transition')
         u.add_transfer(char, v)
+        # print '%s ----%s----> %s' % (u.index, char, v.index)
 
     def get_transfer(self, u, char):
         if (u not in self.states or char not in self.alphabet):

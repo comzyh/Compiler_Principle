@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-03 23:33:24
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-04 15:20:48
+# @Last Modified time: 2015-06-04 22:56:24
 import re
 from fa import DFA
 import crash_on_ipy
@@ -175,7 +175,7 @@ def create_lr_dfa(final, syntaxs, vn, vt):
                 node.data = new_set
                 items_set_to_node[new_set] = node
                 queue.append(node)
-            dfa.add_trans(head, symbol, items_set_to_node[new_set])
+            dfa.add_transfer(head, symbol, items_set_to_node[new_set])
             print "%d ----%10s---->%d" % (head.index, symbol,
                                           items_set_to_node[new_set].index)
 
