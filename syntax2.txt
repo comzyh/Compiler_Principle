@@ -1,0 +1,13 @@
+id:id {:x int:x }:x <<:x ;:x #:end
+S
+S = { block }
+type = int
+block = $
+block = stmt block
+stmt = exp ;
+exp = id << exp
+exp = id
+#{
+#	cout << a;
+#	cout << b;
+#}

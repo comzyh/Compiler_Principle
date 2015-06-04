@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-03 23:33:24
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-04 13:21:53
+# @Last Modified time: 2015-06-04 15:07:58
 import re
 from fa import DFA
 import crash_on_ipy
@@ -16,12 +16,18 @@ def read_syntax():
     final = None
     syntaxs = []
     vn = set()
+    vt = set()
+    reg_split_token_type = re.compile(r'(?P<token>\S+):(?P<type>\w+)')
     reg = re.compile(r'^(?P<left>\w+)\s*=\s*(?P<right>.*?)$')
     for line in open('syntax.txt'):
         line_number += 1
         if line[0] == '#':
             continue
         if line_number == 1:
+            for t in line[:-1].split(' '):
+                result = reg_split_token_type.search(t)
+                vt.add(result.group('token'))
+        if line_number == 2:
             final = line[:-1]
             syntaxs.append((final + '\'', final))
         else:
@@ -38,7 +44,7 @@ def read_syntax():
             vn.add(res.group('left'))
             legal_number += 1
     print 'syntax loaded, %d lines at all' % legal_number
-    return final, syntaxs, vn
+    return final, syntaxs, vn, vt
 
 
 def read_token_table():
@@ -51,20 +57,11 @@ def read_token_table():
     return token_table
 
 
-def read_vt():
-    vt = set()
-    reg_split_token_type = re.compile(r'(?P<token>\S+):(?P<type>\w+)')
-    for t in open('lex.txt', 'r').readline()[:-1].split(' '):
-        result = reg_split_token_type.search(t)
-        vt.add(result.group('token'))
-    return vt
-
-
 def create_lr_dfa(final, syntaxs, vn, vt):
     if vn.intersection(vt):
         raise Exception('VN and VT has intersection')
     else:
-        alptabet = vn.union(vt)
+        alptabet = list(vn) + list(vt)
     productions = {}
     for syntax in syntaxs:
         if syntax[0] not in productions:
@@ -101,11 +98,14 @@ def create_lr_dfa(final, syntaxs, vn, vt):
         getting_nullable.remove(item)
         return nullable[item]
 
+    getting_first = set()
+
     def get_first(item):  # 获取first集,返回set
         if not isinstance(item, tuple):
             raise Exception('item is not tuple')
         if item in first:
             return first[item]
+        getting_first.add(item)
         first[item] = set()
         for t in item:
             if t in vt:
@@ -115,8 +115,12 @@ def create_lr_dfa(final, syntaxs, vn, vt):
                 for production in productions[t]:
                     if production[0] in vt:
                         first[item].add(production[0])
+                    elif production[1:] not in getting_first:
+                        first[item] = first[item].union(
+                            get_first(production[1:]))
             if not get_nullable(t):
                 break
+        getting_first.remove(item)
         return first[item]
 
     def closure(item, item_set):
@@ -141,7 +145,7 @@ def create_lr_dfa(final, syntaxs, vn, vt):
     init_set = set()
     init_set.add(init_item)
     closure(init_item, init_set)
-    dfa = DFA(alptabet)
+    dfa = DFA(set(alptabet))
     dfa.S.data = tuple(init_set)
     items_set_to_node[dfa.S.data] = dfa.S
 
@@ -175,20 +179,73 @@ def create_lr_dfa(final, syntaxs, vn, vt):
             print "%d ----%10s---->%d" % (head.index, symbol,
                                           items_set_to_node[new_set].index)
 
-    print '-----------items_set--------------'
-    for item in dfa.states[6].data:
-        print item
+    # print '-----------items_set--------------'
+    # for item in dfa.states[6].data:
+    #     print item
+    # raise Exception('')
     return dfa
 
 
-# def parser_over_lr1(dfa, token_table):
-#     stack = []
+def write_lr_table_to_file(lrtable, vn, vt):
+    with open('lrtable.tsv', 'w+') as f:
+        f.write('\t')
+        for symbol in vt:
+            f.write('%s\t' % symbol)
+        for symbol in vn:
+            f.write('%s\t' % symbol)
+        f.write('\n')
+        for i in range(0, len(lrtable)):
+            f.write('%d\t' % i)
+            for symbol in vt:
+                f.write('%s\t' % lrtable[i][symbol])
+            for symbol in vn:
+                f.write('%s\t' % lrtable[i][symbol])
+            f.write('\n')
+
+
+def parser_over_lr1(lrtable, token_table, syntaxs):
+    state_stack = [0]
+    symbol_stack = []
+    i = 0
+    success = False
+    last_token = None
+    while not success:
+        token = token_table[i]
+        if token != last_token:
+            print 'token %4d:%s' % (i, token)
+        last_token = token
+        # print state_stack
+        # print symbol_stack
+        h = state_stack[-1]
+        action = lrtable[h][token]
+        if not action:
+            print 'syntax error\n'
+            break
+        if 'acc' in action:
+            print 'syntax anaysis finished!'
+            success = True
+            break
+        else:
+            action = action[0]
+        # print 'action:', action
+        if action[0] == 'S':
+            state_stack.append(int(action[1:]))
+            symbol_stack.append(token)
+            i += 1
+        if action[0] == 'r':
+            p_index = int(action[1:])
+            k = len(syntaxs[p_index]) - 1
+            left = syntaxs[p_index][0]
+            if k > 0:
+                state_stack = state_stack[:-k]
+                symbol_stack = symbol_stack[:-k]
+            state_stack.append(int(lrtable[state_stack[-1]][left][0]))
+            symbol_stack.append(left)
 
 
 def main():
-    final, syntaxs, vn = read_syntax()
+    final, syntaxs, vn, vt = read_syntax()
     token_table = read_token_table()
-    vt = read_vt()
     for syntax in syntaxs:
         print syntaxs.index(syntax), syntax
     # print token_table
@@ -219,19 +276,16 @@ def main():
                         production[1] == final and '#' in ahead):
                     lrtable[i]['#'].append('acc')
     # write LR(1) table in file
-    with open('lrtable.tsv', 'w+') as f:
-        f.write('\t')
-        for symbol in vt:
-            f.write('%s\t' % symbol)
-        for symbol in vn:
-            f.write('%s\t' % symbol)
-        f.write('\n')
-        for i in range(0, len(dfa.states)):
-            f.write('%d\t' % i)
-            for symbol in vt:
-                f.write('%s\t' % lrtable[i][symbol])
-            for symbol in vn:
-                f.write('%s\t' % lrtable[i][symbol])
-            f.write('\n')
+    write_lr_table_to_file(lrtable, vn, vt)
+    # print 'dfa.states[34].data'
+    # print dfa.states[34].data
+    # import json
+    # for state in dfa.states:
+    #     # print json.dumps(state.data, indent=2)
+    #     print 'index %d' % state.index
+    #     for item in state.data:
+    #         print item
+    parser_over_lr1(lrtable, token_table, syntaxs)
+
 if __name__ == '__main__':
     main()
