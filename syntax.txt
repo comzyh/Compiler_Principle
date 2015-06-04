@@ -1,5 +1,5 @@
 S
-S = S function
+S = function S
 S = $
 function = type id ( args ) { block }
 args = $
@@ -15,7 +15,7 @@ block = stmt block
 stmt = $
 stmt = { stmt }
 stmt = declare ;
-declare = type id ids;
+declare = type id ids ;
 ids = $
 ids = , id ids
 stmt = exp ;
@@ -25,9 +25,9 @@ exp = number
 exp = string
 exp = exp + exp
 exp = ( exp )
-stmt = return return_value;
+stmt = return exp ;
 return_value = $
-return_value = exp;
+return_value = exp ;
 for_exp = for ( exp ; exp ; exp ) compound_stmt
 while_exp = while ( exp ) compound_stmt
 compound_stmt = { block }

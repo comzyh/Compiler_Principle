@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-01 19:05:49
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-03 23:02:23
+# @Last Modified time: 2015-06-04 09:51:25
 import re
 import json
 from fa import Epsilon, NFA
@@ -140,6 +140,8 @@ def main():
         print '\n'
         token_table += token_table_line
         # break
+    token_table.append(('#', '#'))
+    print token_table
     output_file = open('token_table.txt', 'w+')
     for token_type, token in token_table:
         output_file.write('%s\t%s\t%s\n' % (token_type,
