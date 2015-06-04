@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-03 23:33:24
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-04 15:07:58
+# @Last Modified time: 2015-06-04 15:20:48
 import re
 from fa import DFA
 import crash_on_ipy
@@ -27,7 +27,7 @@ def read_syntax():
             for t in line[:-1].split(' '):
                 result = reg_split_token_type.search(t)
                 vt.add(result.group('token'))
-        if line_number == 2:
+        elif line_number == 2:
             final = line[:-1]
             syntaxs.append((final + '\'', final))
         else:
@@ -67,8 +67,8 @@ def create_lr_dfa(final, syntaxs, vn, vt):
         if syntax[0] not in productions:
             productions[syntax[0]] = []
         productions[syntax[0]].append(syntax)
-    print 'productions:'
-    print productions
+    # print 'productions:'
+    # print productions
     items_set_to_node = {}  # tuple to Node
     first = {}
     nullable = {}
@@ -215,7 +215,7 @@ def parser_over_lr1(lrtable, token_table, syntaxs):
             print 'token %4d:%s' % (i, token)
         last_token = token
         # print state_stack
-        # print symbol_stack
+        print symbol_stack
         h = state_stack[-1]
         action = lrtable[h][token]
         if not action:
@@ -244,6 +244,7 @@ def parser_over_lr1(lrtable, token_table, syntaxs):
 
 
 def main():
+    print 'Parser by comzyh............'
     final, syntaxs, vn, vt = read_syntax()
     token_table = read_token_table()
     for syntax in syntaxs:

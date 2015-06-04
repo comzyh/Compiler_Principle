@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-01 19:05:49
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-04 09:51:25
+# @Last Modified time: 2015-06-04 15:20:44
 import re
 import json
 from fa import Epsilon, NFA
@@ -106,7 +106,7 @@ def tokenizer_over_nfa(string, position, nfa):
 
 
 def main():
-    print 'Tokenizer by comzyh'
+    print 'Tokenizer by comzyh............'
     final, productions = read_lexical()
     nfa = create_nfa(final.keys(), productions)
     for key, value in nfa.name_to_state_dict.items():
@@ -141,7 +141,7 @@ def main():
         token_table += token_table_line
         # break
     token_table.append(('#', '#'))
-    print token_table
+    # print token_table
     output_file = open('token_table.txt', 'w+')
     for token_type, token in token_table:
         output_file.write('%s\t%s\t%s\n' % (token_type,
