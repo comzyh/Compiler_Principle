@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-02 17:38:36
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-04 11:19:17
+# @Last Modified time: 2015-06-04 12:57:37
 
 Epsilon = 0
 
@@ -96,9 +96,12 @@ class DFANode(object):
         self.data = {}
 
     def add_transfer(self, char, dest):
+        self.transfer[char] = dest
+
+    def get_transfer(self, char):
         if char not in self.transfer:
-            self.transfer[char] = []
-        self.transfer[char].append(dest)
+            return None
+        return self.transfer[char]
 
 
 class DFA(object):
@@ -127,3 +130,8 @@ class DFA(object):
             print 'char = ', char
             raise Exception('illigal transition')
         u.add_transfer(char, v)
+
+    def get_transfer(self, u, char):
+        if (u not in self.states or char not in self.alphabet):
+            raise Exception('no such transfer')
+        return u.get_transfer(char)

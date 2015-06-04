@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-03 23:33:24
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-04 11:29:47
+# @Last Modified time: 2015-06-04 13:21:53
 import re
 from fa import DFA
 import crash_on_ipy
@@ -137,16 +137,14 @@ def create_lr_dfa(final, syntaxs, vn, vt):
                 closure(new_item, item_set)
 
     # create the start Node
-    init_item = (0, (final + '\'', final), ('#'))
+    init_item = (0, (final + '\'', final), ('#',))
     init_set = set()
     init_set.add(init_item)
     closure(init_item, init_set)
     dfa = DFA(alptabet)
     dfa.S.data = tuple(init_set)
     items_set_to_node[dfa.S.data] = dfa.S
-    print '-----------items_set--------------'
-    for item in dfa.S.data:
-        print item
+
     # start to build dfa
     queue = [dfa.S]
     while queue:
@@ -177,7 +175,14 @@ def create_lr_dfa(final, syntaxs, vn, vt):
             print "%d ----%10s---->%d" % (head.index, symbol,
                                           items_set_to_node[new_set].index)
 
+    print '-----------items_set--------------'
+    for item in dfa.states[6].data:
+        print item
     return dfa
+
+
+# def parser_over_lr1(dfa, token_table):
+#     stack = []
 
 
 def main():
@@ -185,12 +190,48 @@ def main():
     token_table = read_token_table()
     vt = read_vt()
     for syntax in syntaxs:
-        print syntax
+        print syntaxs.index(syntax), syntax
     # print token_table
     # print vn
     # print vt
     dfa = create_lr_dfa(final, syntaxs, vn, vt)
-
-
+    lrtable = []
+    alptabet = vn.union(vt)
+    for i in range(0, len(dfa.states)):
+        lrtable.append({})
+        node = dfa.states[i]
+        for symbol in alptabet:
+            lrtable[i][symbol] = []
+            t = node.get_transfer(symbol)
+            if node.get_transfer(symbol) is not None:
+                if symbol in vt:
+                    lrtable[i][symbol].append('S%d' % t.index)
+                else:
+                    lrtable[i][symbol].append('%d' % t.index)
+        for item in node.data:
+            pos, production, ahead = item
+            # print 'i, pos, production'
+            # print i, pos, production, ahead, len(production)
+            if pos == len(production) - 1:
+                for t in ahead:
+                    lrtable[i][t].append('r%d' % syntaxs.index(production))
+                if (len(production) == 2 and production[0] == final + '\'' and
+                        production[1] == final and '#' in ahead):
+                    lrtable[i]['#'].append('acc')
+    # write LR(1) table in file
+    with open('lrtable.tsv', 'w+') as f:
+        f.write('\t')
+        for symbol in vt:
+            f.write('%s\t' % symbol)
+        for symbol in vn:
+            f.write('%s\t' % symbol)
+        f.write('\n')
+        for i in range(0, len(dfa.states)):
+            f.write('%d\t' % i)
+            for symbol in vt:
+                f.write('%s\t' % lrtable[i][symbol])
+            for symbol in vn:
+                f.write('%s\t' % lrtable[i][symbol])
+            f.write('\n')
 if __name__ == '__main__':
     main()
