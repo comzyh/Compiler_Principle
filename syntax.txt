@@ -1,4 +1,4 @@
-auto:key_word break:key_word case:key_word char:key_word const:key_word continue:key_word default:key_word do:key_word double:key_word else:key_word enum:key_word extern:key_word float:key_word for:key_word goto:key_word if:key_word int:key_word long:key_word register:key_word return:key_word short:key_word signed:key_word sizeof:key_word static:key_word struct:key_word switch:key_word typedef:key_word union:key_word unsigned:key_word void:key_word volatile:key_word while:key_word number:const string:const id:id =:operator +:operator -:operator *:operator /:operator %:operator <<:operator (:limiter ):limiter <:limiter >:limiter [:limiter ]:limiter {:limiter }:limiter ;:limiter ,:limiter #:file_end
+auto:key_word break:key_word case:key_word char:key_word const:key_word continue:key_word default:key_word do:key_word double:key_word else:key_word enum:key_word extern:key_word float:key_word for:key_word goto:key_word if:key_word int:key_word long:key_word register:key_word return:key_word short:key_word signed:key_word sizeof:key_word static:key_word struct:key_word switch:key_word typedef:key_word union:key_word unsigned:key_word void:key_word volatile:key_word while:key_word number:const string:const id:id =:operator +:operator -:operator *:operator /:operator %:operator <<:operator <:operator ++:operator (:limiter ):limiter <:limiter >:limiter [:limiter ]:limiter {:limiter }:limiter ;:limiter ,:limiter #:file_end
 S
 S = function S
 S = $
@@ -26,6 +26,8 @@ vars = $
 stmt = exp ;
 exp = id = exp
 exp = id << exp
+exp = id < exp
+exp = id ++
 exp = id
 exp = number
 exp = string
@@ -34,6 +36,8 @@ exp = ( exp )
 stmt = return exp ;
 return_value = $
 return_value = exp ;
+stmt = for_exp
+stmt = while_exp
 for_exp = for ( exp ; exp ; exp ) compound_stmt
 while_exp = while ( exp ) compound_stmt
 compound_stmt = { block }

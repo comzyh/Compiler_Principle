@@ -3,7 +3,7 @@
 # @Author: Comzyh
 # @Date:   2015-06-01 19:05:49
 # @Last Modified by:   Comzyh
-# @Last Modified time: 2015-06-04 22:57:24
+# @Last Modified time: 2015-06-05 09:26:11
 import re
 import json
 from fa import Epsilon, NFA, DFA
@@ -16,6 +16,7 @@ def read_lexical():
     line_number = 0
     legal_number = 0
     final = {}
+    final_ordered = []
     productions = []
     reg = re.compile(r'(?P<left>\S+)\s*=\s*((?P<epsilon>\$)|'
                      '((?P<right>[^\s\"]+))?\s*\"(?P<terminate>.*)\")')
@@ -31,6 +32,7 @@ def read_lexical():
                 if not result:
                     print 'm', t, 'z'
                 final[result.group('token')] = result.group('type')
+                final_ordered.append(result.group('token'))
         else:
             result = reg.search(line)
             if result is None:
@@ -45,7 +47,7 @@ def read_lexical():
             productions.append(p)
             legal_number += 1
     print 'lexical loaded, %d lines at all' % legal_number
-    return final, productions
+    return final, productions, final_ordered
 
 
 def create_nfa(final_states_name, productions):
@@ -162,9 +164,10 @@ def tokenizer_over_dfa(string, position, dfa):
     for i in range(position, len(string)):
         char = string[i]
         new_state = state.get_transfer(char)
-        # print 'char: %s, %s' % (char, new_state.index)
+
         if not new_state:
             break
+        # print 'char: %s, %s' % (char, new_state.data)
         endpos = i
         state = new_state
 
@@ -174,9 +177,11 @@ def tokenizer_over_dfa(string, position, dfa):
 
 def main():
     print 'Tokenizer by comzyh............'
-    final, productions = read_lexical()
+    final, productions, final_ordered = read_lexical()
     nfa = create_nfa(final.keys(), productions)
     dfa = nfa_to_dfa(nfa)
+    print 'NFA has %d states' % len(nfa.states)
+    print 'DFA has %d states' % len(dfa.states)
     # for key, value in nfa.name_to_state_dict.items():
     #     print 'index: %d, %s' % (value.index, key)
     # print nfa
@@ -199,7 +204,7 @@ def main():
                     lexical_error = True
                     break
                 token_type = None
-                for _type in final:
+                for _type in final_ordered:
                     if _type in state_set:
                         token_type = _type
                         break

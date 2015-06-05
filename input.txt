@@ -1,7 +1,11 @@
 int main(int argc, char *argv[]){
-	int a,b;
+	int a,b,i;
 	char str[100];
 	str = "\"Hello World\"";
-	cout << a;
+	for (i = 1;i < b; i ++)
+	{
+		cout << i;
+		cout << a;
+	}
 	cout << b;
 }
